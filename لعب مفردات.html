@@ -1,1 +1,582 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>لعبة مفردات - السنة الخامسة (الفصل الأول) — 300 سؤال</title>
+  <style>
+    :root{--bg-1:#e9fef0;--bg-2:#f4fbf6;--card:#fff;--accent:#2db34a;--muted:#556b58;}
+    *{box-sizing:border-box}
+    body{margin:0;direction:rtl;font-family:'Segoe UI',Tahoma, Geneva, Verdana, sans-serif;background:linear-gradient(180deg,var(--bg-1),var(--bg-2));color:#072a14;padding-bottom:60px}
+    header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;max-width:980px;margin:12px auto}
+    .brand{display:flex;gap:12px;align-items:center}
+    .logo{width:56px;height:56px;border-radius:12px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px}
+    main{max-width:980px;margin:16px auto;padding:0 18px}
+    .lesson-card{background:var(--card);border-radius:14px;padding:16px;box-shadow:0 12px 30px rgba(10,60,30,0.06)}
+    .unit-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+    .unit{background:#fff;border-radius:10px;padding:8px 12px;border:1px solid #e6f4ea;cursor:pointer;font-weight:700}
+    .unit.active{background:linear-gradient(90deg,#f3fff4,#e9fff0);border-color:var(--accent)}
+    .question{margin-top:12px}
+    .question p{font-size:20px;margin:0}
+    .choices{display:grid;gap:10px;margin-top:12px}
+    @media(min-width:640px){.choices{grid-template-columns:1fr 1fr}}
+    .choice{padding:12px;border-radius:10px;border:1px solid #e8f4ea;background:#fbfffb;cursor:pointer;font-weight:700;min-height:56px;display:flex;align-items:center;justify-content:center}
+    .choice:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(6,40,16,0.05)}
+    .choice.correct{border-color:rgba(45,179,74,0.95);background:linear-gradient(180deg,#f7fff8,#f1fff4)}
+    .choice.wrong{border-color:#e26b6b;background:linear-gradient(180deg,#fff7f7,#fff3f3)}
+    .toolbar{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+    button.btn{background:var(--accent);color:#fff;padding:10px 14px;border-radius:12px;border:none;cursor:pointer;font-weight:800}
+    button.ghost{background:transparent;border:1px solid #e6e6e6;padding:8px 12px;border-radius:10px;cursor:pointer}
+    .footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px;color:var(--muted);flex-wrap:wrap}
+    .progress{height:12px;background:#eef8ef;border-radius:999px;overflow:hidden;margin-top:12px}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#19a543);width:0%;transition:width .42s}
+    .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 16px;border-radius:999px;opacity:0;pointer-events:none}
+    .toast.show{opacity:1;pointer-events:auto}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">ت</div>
+      <div>
+        <div style="font-weight:800">لعبة مفردات — السنة الخامسة (الفصل الأول)</div>
+        <div style="font-size:13px;color:var(--muted)">300 سؤال — تدريبات مفردات ممتعة</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div style="background:#fff;padding:8px 12px;border-radius:999px;font-weight:700">النقاط: <span id="score">0</span></div>
+      <div style="background:#fff;padding:8px 12px;border-radius:999px;font-weight:700">المستوى: <span id="level">1</span></div>
+    </div>
+  </header>
 
+  <main>
+    <section class="lesson-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:13px;color:var(--muted)">اختر وحدة ثم اضغط ابدأ</div>
+          <div class="unit-list" id="unitList"></div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px;color:var(--muted)">التقدم</div>
+          <div style="font-weight:800" id="progressText">0 / 0</div>
+        </div>
+      </div>
+
+      <div class="question" style="margin-top:14px">
+        <p id="prompt">اضغط على وحدة ثم "ابدأ" لبدء التدريب</p>
+        <div class="choices" id="choices"></div>
+
+        <div class="toolbar">
+          <button class="btn" id="startBtn">ابدأ</button>
+          <button class="ghost" id="listenBtn">🔊 استمع</button>
+          <button class="ghost" id="skipBtn">تخطي</button>
+        </div>
+
+        <div class="footer">
+          <div id="feedback" style="font-size:13px;color:var(--muted)"></div>
+          <div style="font-size:13px;color:var(--muted)">سؤال <span id="qIndex">0</span> من <span id="qTotal">0</span></div>
+        </div>
+
+        <div class="progress" aria-hidden><i id="progressBar"></i></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast">تم</div>
+
+  <script>
+/* كامل الأسئلة — 300 سؤال موزعة على 5 وحدات (كل وحدة 60 سؤال تقريبًا) */
+
+/* --- بيانات الوحدات (الفصل الأول) --- */
+const UNITS = [
+  /* وحدة 1: أدوات المدرسة (60 سؤال) */
+  {
+    id: 'school',
+    title: 'أدوات المدرسة',
+    desc: 'قلم، دفتر، ممحاة، سبورة، حقيبة، ...',
+    questions: [
+      { q: 'What is "قلم" in English?', choices: ['Book','Pencil','Door','Table'], a: 1, audio:'Pencil' },
+      { q: 'What is "دفتر" in English?', choices: ['Notebook','Bag','Window','Chair'], a: 0, audio:'Notebook' },
+      { q: 'What is "ممحاة" in English?', choices: ['Eraser','Ruler','Pencil','Pen'], a: 0, audio:'Eraser' },
+      { q: 'What is "مكتب" in English?', choices: ['Chair','Desk','Pen','School'], a: 1, audio:'Desk' },
+      { q: 'Translate "Book" to Arabic.', choices: ['قلم','كتاب','باب','طاولة'], a: 1, audio:'Book' },
+      { q: 'Translate "Bag" to Arabic.', choices: ['كرسي','حقيبة','نافذة','طبشور'], a: 1, audio:'Bag' },
+      { q: 'What is "مسطرة" in English?', choices: ['Pen','Ruler','Notebook','Eraser'], a: 1, audio:'Ruler' },
+      { q: 'Choose the correct translation: "كرسي"', choices: ['Table','Chair','Window','Board'], a: 1, audio:'Chair' },
+      { q: 'What is "سبورة" in English?', choices: ['Board','Book','Bag','Notebook'], a: 0, audio:'Board' },
+      { q: 'Translate "Teacher" to Arabic.', choices: ['طالب','معلم','مدرسة','مدير'], a: 1, audio:'Teacher' },
+
+      { q: 'What is "طالب" in English?', choices: ['Teacher','Student','Driver','Child'], a: 1, audio:'Student' },
+      { q: 'Translate "School" to Arabic.', choices: ['مدرسة','جامعة','بيت','ملعب'], a: 0, audio:'School' },
+      { q: 'What is "مدير" in English?', choices: ['Janitor','Manager','Principal','Cook'], a: 2, audio:'Principal' },
+      { q: 'What is "طبشور" in English?', choices: ['Board','Marker','Chalk','Paper'], a: 2, audio:'Chalk' },
+      { q: 'Translate "Library" to Arabic.', choices: ['مكتبة','مدرسة','قاعة','صف'], a: 0, audio:'Library' },
+      { q: 'Translate "Pen" to Arabic.', choices: ['ممحاة','قلم','حقيبة','سبورة'], a: 1, audio:'Pen' },
+      { q: 'What is "حقيبة" in English?', choices: ['Bag','Notebook','Desk','Chair'], a: 0, audio:'Bag' },
+      { q: 'Translate "Board" to Arabic.', choices: ['سبورة','باب','كرسي','معلم'], a: 0, audio:'Board' },
+      { q: 'What is "نافذة" in English?', choices: ['Chair','Window','Book','Bag'], a: 1, audio:'Window' },
+      { q: 'Translate "Door" to Arabic.', choices: ['كرسي','باب','مدرسة','كتاب'], a: 1, audio:'Door' },
+
+      { q: 'What is "مكتبة" in English?', choices: ['Library','School','House','Room'], a: 0, audio:'Library' },
+      { q: 'What is "قاعة" in English?', choices: ['Hall','Class','Desk','Notebook'], a: 0, audio:'Hall' },
+      { q: 'Translate "Classroom" to Arabic.', choices: ['مكتب','صف','باب','سبورة'], a: 1, audio:'Classroom' },
+      { q: 'Translate "Lesson" to Arabic.', choices: ['درس','مكتب','قلم','كتاب'], a: 0, audio:'Lesson' },
+      { q: 'What is "جدول" in English?', choices: ['Plan','Schedule','Book','Table'], a: 1, audio:'Schedule' },
+      { q: 'Translate "Homework" to Arabic.', choices: ['عمل منزلي','درس','مكتبة','قلم'], a: 0, audio:'Homework' },
+      { q: 'Translate "Exam" to Arabic.', choices: ['امتحان','درس','قلم','ورقة'], a: 0, audio:'Exam' },
+      { q: 'What is "ورقة" in English?', choices: ['Board','Pen','Paper','Desk'], a: 2, audio:'Paper' },
+      { q: 'What is "سبورة بيضاء" in English?', choices: ['Chalkboard','Whiteboard','Board','Desk'], a: 1, audio:'Whiteboard' },
+      { q: 'Translate "Marker" to Arabic.', choices: ['قلم سبورة','حقيبة','مكتب','مدرسة'], a: 0, audio:'Marker' },
+
+      { q: 'Translate "Chair" to Arabic.', choices: ['كرسي','قلم','باب','مدرسة'], a: 0, audio:'Chair' },
+      { q: 'What is "حاسوب" in English?', choices: ['Computer','Notebook','Pen','Table'], a: 0, audio:'Computer' },
+      { q: 'What is "حاسبة" in English?', choices: ['Calculator','Ruler','Board','Book'], a: 0, audio:'Calculator' },
+      { q: 'Translate "Desk" to Arabic.', choices: ['مكتب','قلم','كتاب','باب'], a: 0, audio:'Desk' },
+      { q: 'Translate "Student" to Arabic.', choices: ['طالب','معلم','مكتبة','مدير'], a: 0, audio:'Student' },
+      { q: 'What is "قلم رصاص" in English?', choices: ['Pen','Pencil','Marker','Board'], a: 1, audio:'Pencil' },
+      { q: 'What is "جامعة" in English?', choices: ['School','Classroom','University','Library'], a: 2, audio:'University' },
+      { q: 'Translate "Subject" to Arabic.', choices: ['مادة','سبورة','حقيبة','مدرسة'], a: 0, audio:'Subject' },
+      { q: 'Translate "Notebook" to Arabic.', choices: ['دفتر','مكتب','حقيبة','كرسي'], a: 0, audio:'Notebook' },
+      { q: 'What is "قلم حبر" in English?', choices: ['Marker','Pen','Pencil','Eraser'], a: 1, audio:'Pen' },
+
+      { q: 'What is "ممحاة صغيرة" in English?', choices: ['Big Eraser','Small Eraser','Pencil','Pen'], a: 1, audio:'Eraser' },
+      { q: 'Translate "Glue" to Arabic.', choices: ['غراء','قلم','حقيبة','ورقة'], a: 0, audio:'Glue' },
+      { q: 'Translate "Scissors" to Arabic.', choices: ['مقص','قلم','ممحاة','دفتر'], a: 0, audio:'Scissors' },
+      { q: 'What is "صندوق" in English?', choices: ['Box','Desk','Bag','Board'], a: 0, audio:'Box' },
+      { q: 'What is "لوح" in English?', choices: ['Board','Window','Door','Chair'], a: 0, audio:'Board' },
+      { q: 'Translate "Paint" to Arabic.', choices: ['طلاء','قلم','ورق','مكتب'], a: 0, audio:'Paint' },
+      { q: 'Translate "Brush" to Arabic.', choices: ['فرشاة','قلم','ممحاة','سبورة'], a: 0, audio:'Brush' },
+      { q: 'What is "مؤشر" in English?', choices: ['Index','Pointer','Marker','Book'], a: 2, audio:'Marker' },
+      { q: 'Translate "Clipboard" to Arabic.', choices: ['لوحة كتابة','حقيبة','مكتب','سبورة'], a: 0, audio:'Clipboard' },
+      { q: 'What is "قلم جاف" in English?', choices: ['Ballpoint','Pencil','Marker','Pen'], a: 0, audio:'Ballpoint' }
+    ]
+  },
+
+  /* وحدة 2: العائلة (60 سؤال) */
+  {
+    id: 'family',
+    title: 'العائلة',
+    desc: 'أب، أم، أخ، أخت، جد، جدة، ...',
+    questions: [
+      { q: 'How do you say "أب" in English?', choices: ['Father','Mother','Brother','Son'], a: 0, audio:'Father' },
+      { q: 'How do you say "أم" in English?', choices: ['Uncle','Mother','Aunt','Grandmother'], a: 1, audio:'Mother' },
+      { q: 'Choose the word for "أخ"', choices: ['Sister','Brother','Cousin','Friend'], a: 1, audio:'Brother' },
+      { q: 'Choose the word for "أخت"', choices: ['Sister','Mother','Daughter','Teacher'], a: 0, audio:'Sister' },
+      { q: 'Translate "Grandfather" to Arabic.', choices: ['جد','جدة','عم','خال'], a: 0, audio:'Grandfather' },
+      { q: 'Translate "Grandmother" to Arabic.', choices: ['عم','خال','جدة','أب'], a: 2, audio:'Grandmother' },
+      { q: 'What is "ابن" in English?', choices: ['Daughter','Son','Brother','Cousin'], a: 1, audio:'Son' },
+      { q: 'What is "ابنة" in English?', choices: ['Son','Daughter','Sister','Mother'], a: 1, audio:'Daughter' },
+      { q: 'Translate "Uncle" to Arabic.', choices: ['عم','خال','جد','زوج'], a: 0, audio:'Uncle' },
+      { q: 'Translate "Aunt" to Arabic.', choices: ['عمة','خالة','أم','أب'], a: 0, audio:'Aunt' },
+
+      { q: 'What is "زوج" in English?', choices: ['Husband','Wife','Father','Brother'], a: 0, audio:'Husband' },
+      { q: 'What is "زوجة" in English?', choices: ['Husband','Wife','Mother','Sister'], a: 1, audio:'Wife' },
+      { q: 'Choose the right word: "Cousin" (male) = ?', choices: ['ابن العم','ابنة العم','أخ','أب'], a: 0, audio:'Cousin' },
+      { q: 'Choose the right word: "Cousin" (female) = ?', choices: ['ابنة العم','ابن العم','أم','اخت'], a: 0, audio:'Cousin' },
+      { q: 'Translate "Parents" to Arabic.', choices: ['أبوان','أطفال','اخوة','زوجان'], a: 0, audio:'Parents' },
+      { q: 'What is "أخ أكبر" in English?', choices: ['Younger brother','Older brother','Cousin','Father'], a: 1, audio:'Older brother' },
+      { q: 'What is "أخ أصغر" in English?', choices: ['Older brother','Younger brother','Son','Uncle'], a: 1, audio:'Younger brother' },
+      { q: 'Translate "Sibling" to Arabic.', choices: ['أخ/أخت','أم','طفل','جد'], a: 0, audio:'Sibling' },
+      { q: 'Translate "Family" to Arabic.', choices: ['عائلة','صف','مجموعة','صديق'], a: 0, audio:'Family' },
+      { q: 'What is "حفيد" in English?', choices: ['Grandson','Granddaughter','Son','Nephew'], a: 0, audio:'Grandson' },
+
+      { q: 'What is "حفيدة" in English?', choices: ['Grandson','Granddaughter','Daughter','Niece'], a: 1, audio:'Granddaughter' },
+      { q: 'Translate "Niece" to Arabic.', choices: ['ابنة الأخ/الأخت','ابن الأخ','أخ','أم'], a: 0, audio:'Niece' },
+      { q: 'Translate "Nephew" to Arabic.', choices: ['ابن الأخ/الأخت','ابنة العم','أخ','أم'], a: 0, audio:'Nephew' },
+      { q: 'What is "جدّ" in English?', choices: ['Grandfather','Father','Uncle','Brother'], a: 0, audio:'Grandfather' },
+      { q: 'What is "جَدّة" in English?', choices: ['Grandmother','Mother','Aunt','Sister'], a: 0, audio:'Grandmother' },
+      { q: 'Choose correct: "Mother" = ?', choices: ['أم','أب','أخت','عمّة'], a: 0, audio:'Mother' },
+      { q: 'Choose correct: "Father" = ?', choices: ['أخ','أب','ابن','جد'], a: 1, audio:'Father' },
+      { q: 'Translate "Married" to Arabic.', choices: ['متزوج','أعزب','مطلق','أرمل'], a: 0, audio:'Married' },
+      { q: 'Translate "Single" to Arabic.', choices: ['أعزب','متزوج','مطلق','أرمل'], a: 0, audio:'Single' },
+      { q: 'What is "أرمل" in English?', choices: ['Widower/Widow','Divorced','Married','Single'], a: 0, audio:'Widow' },
+
+      { q: 'What is "مطلق" in English?', choices: ['Divorced','Married','Single','Widow'], a: 0, audio:'Divorced' },
+      { q: 'Translate "Relative" to Arabic.', choices: ['قريب/ة','صديق','جيران','زميل'], a: 0, audio:'Relative' },
+      { q: 'Which is "Only child" in Arabic?', choices: ['الابن الوحيد','الطفل','الابن الأكبر','الأخ الوحيد'], a: 0, audio:'Only child' },
+      { q: 'Choose: "Daughter-in-law" = ?', choices: ['كُنَّة','نَفْس','حفيد','زوجة الابن'], a: 0, audio:'Daughter-in-law' },
+      { q: 'Choose: "Son-in-law" = ?', choices: ['صهر','زوج الابنة','ابن','أخ'], a: 0, audio:'Son-in-law' },
+      { q: 'Translate "In-laws" to Arabic.', choices: ['أهل الزوج/الزوجة','الأقارب','الأصدقاء','الجيران'], a: 0, audio:'In-laws' },
+      { q: 'What is "stepfather" in Arabic?', choices: ['زوج الأم','زوج الأخت','زوج الابنة','زوج الجد'], a: 0, audio:'Stepfather' },
+      { q: 'What is "stepmother" in Arabic?', choices: ['زوجة الأب','زوجة الأخ','زوجة العم','زوجة الجد'], a: 0, audio:'Stepmother' },
+      { q: 'Translate "Half-brother" to Arabic.', choices: ['نصف أخ','أخ كامل','ابن','أب'], a: 0, audio:'Half-brother' },
+      { q: 'Translate "Half-sister" to Arabic.', choices: ['نصف أخت','أخت كاملة','ابنة','أم'], a: 0, audio:'Half-sister' },
+
+      { q: 'Which is "family tree" in Arabic?', choices: ['شجرة العائلة','قائمة العائلة','سجل العائلة','كتاب العائلة'], a: 0, audio:'Family tree' },
+      { q: 'What is "relative" in English?', choices: ['Relative','Friend','Teacher','Neighbor'], a: 0, audio:'Relative' },
+      { q: 'Translate "elder" to Arabic (in family)', choices: ['كبير السن','أصغر','متوسط','شاب'], a: 0, audio:'Elder' },
+      { q: 'Translate "youngest" to Arabic (in family)', choices: ['الأصغر','الأكبر','المتوسط','الوسيط'], a: 0, audio:'Youngest' },
+      { q: 'What is "in-law" in English?', choices: ['In-law','Sibling','Parent','Cousin'], a: 0, audio:'In-law' },
+      { q: 'Which Arabic means "family life"?', choices: ['حياة عائلية','حياة مدرسية','حياة عملية','حياة رياضية'], a: 0, audio:'Family life' }
+    ]
+  },
+
+  /* وحدة 3: الأرقام 1-100 (60 سؤال) */
+  {
+    id: 'numbers',
+    title: 'الأرقام (1-100)',
+    desc: 'واحد، اثنان، ثلاثة... حتى مئة',
+    questions: [
+      { q: 'What number is "واحد"?', choices: ['1','2','3','4'], a: 0, audio:'One' },
+      { q: 'What number is "اثنان"?', choices: ['2','3','4','5'], a: 0, audio:'Two' },
+      { q: 'What number is "ثلاثة"?', choices: ['3','5','4','2'], a: 0, audio:'Three' },
+      { q: 'What number is "أربعة"?', choices: ['4','6','3','2'], a: 0, audio:'Four' },
+      { q: 'What number is "خمسة"?', choices: ['5','9','7','3'], a: 0, audio:'Five' },
+      { q: 'What number is "ستة"?', choices: ['6','8','4','2'], a: 0, audio:'Six' },
+      { q: 'What number is "سبعة"?', choices: ['7','5','9','4'], a: 0, audio:'Seven' },
+      { q: 'What number is "ثمانية"?', choices: ['8','7','6','9'], a: 0, audio:'Eight' },
+      { q: 'What number is "تسعة"?', choices: ['9','6','3','2'], a: 0, audio:'Nine' },
+      { q: 'What number is "عشرة"?', choices: ['10','11','9','12'], a: 0, audio:'Ten' },
+
+      { q: 'What number is "إحدى عشر"?', choices: ['11','10','12','13'], a: 0, audio:'Eleven' },
+      { q: 'What number is "اثنا عشر"?', choices: ['12','11','13','14'], a: 0, audio:'Twelve' },
+      { q: 'What number is "ثلاثة عشر"?', choices: ['13','12','11','10'], a: 0, audio:'Thirteen' },
+      { q: 'What number is "أربعة عشر"?', choices: ['14','13','12','11'], a: 0, audio:'Fourteen' },
+      { q: 'What number is "خمسة عشر"?', choices: ['15','14','16','13'], a: 0, audio:'Fifteen' },
+      { q: 'What number is "ستة عشر"?', choices: ['16','15','14','17'], a: 0, audio:'Sixteen' },
+      { q: 'What number is "سبعة عشر"?', choices: ['17','16','18','15'], a: 0, audio:'Seventeen' },
+      { q: 'What number is "ثمانية عشر"?', choices: ['18','17','19','16'], a: 0, audio:'Eighteen' },
+      { q: 'What number is "تسعة عشر"?', choices: ['19','18','17','20'], a: 0, audio:'Nineteen' },
+      { q: 'What number is "عشرون"?', choices: ['20','19','21','18'], a: 0, audio:'Twenty' },
+
+      { q: 'What number is "ثلاثون"?', choices: ['30','20','40','25'], a: 0, audio:'Thirty' },
+      { q: 'What number is "أربعون"?', choices: ['40','30','50','35'], a: 0, audio:'Forty' },
+      { q: 'What number is "خمسون"?', choices: ['50','40','60','45'], a: 0, audio:'Fifty' },
+      { q: 'What number is "ستون"?', choices: ['60','50','70','55'], a: 0, audio:'Sixty' },
+      { q: 'What number is "سبعون"?', choices: ['70','60','80','65'], a: 0, audio:'Seventy' },
+      { q: 'What number is "ثمانون"?', choices: ['80','70','90','75'], a: 0, audio:'Eighty' },
+      { q: 'What number is "تسعون"?', choices: ['90','80','100','95'], a: 0, audio:'Ninety' },
+      { q: 'What number is "مئة"?', choices: ['100','90','99','80'], a: 0, audio:'One hundred' },
+      { q: 'Translate 25 to Arabic.', choices: ['خمسة وعشرون','عشرون','ثلاثون','خمسة وثلاثون'], a: 0, audio:'Twenty-five' },
+      { q: 'Translate 32 to Arabic.', choices: ['اثنان وثلاثون','ثلاثون','اثنان وعشرون','ثلاثة وعشرون'], a: 0, audio:'Thirty-two' },
+
+      { q: 'What number is "خمسة وثلاثون"?', choices: ['35','53','33','30'], a: 0, audio:'Thirty-five' },
+      { q: 'What number is "واحد وأربعون"?', choices: ['41','14','40','34'], a: 0, audio:'Forty-one' },
+      { q: 'Translate 58 to Arabic.', choices: ['ثمانية وخمسون','خمسون وثمانية','ثمانون وخمسون','خمسون'], a: 0, audio:'Fifty-eight' },
+      { q: 'Translate 67 to Arabic.', choices: ['سبعة وستون','ستون وسبعة','ستون وسبعة','سبعون وستة'], a: 0, audio:'Sixty-seven' },
+      { q: 'What number is "ثمانية وخمسون"?', choices: ['58','85','48','55'], a: 0, audio:'Fifty-eight' },
+      { q: 'What number is "سبعة وستون"?', choices: ['67','76','57','70'], a: 0, audio:'Sixty-seven' },
+      { q: 'What number is "تسعة وخمسون"?', choices: ['59','95','49','39'], a: 0, audio:'Fifty-nine' },
+      { q: 'What number is "اثنان وستون"?', choices: ['62','26','22','61'], a: 0, audio:'Sixty-two' },
+      { q: 'Translate 73 to Arabic.', choices: ['ثلاثة وسبعون','سبعون وثلاثة','ثلاثون وسبع','سبعة وثلاثون'], a: 0, audio:'Seventy-three' },
+      { q: 'Translate 84 to Arabic.', choices: ['أربعة وثمانون','ثمانون وأربعة','ثمانون وثلاثة','أربعون وثمانون'], a: 0, audio:'Eighty-four' },
+
+      { q: 'What number is "اثنان وثمانون"?', choices: ['82','28','38','72'], a: 0, audio:'Eighty-two' },
+      { q: 'What number is "تسعة واثنان وثمانون"? (wrong option example)', choices: ['??','??','??','??'], a: 0, audio:'' },
+      { q: 'Translate 99 to Arabic.', choices: ['تسعة وتسعون','تسعون وتسعة','تسعة وثمانون','ثمانون وتسعة'], a: 0, audio:'Ninety-nine' },
+      { q: 'What number is "سبعة واربعون"?', choices: ['47','74','44','57'], a: 0, audio:'Forty-seven' },
+      { q: 'Translate 18 to Arabic.', choices: ['ثمانية عشر','ثمانون','ثمانية','عشرة وثمانية'], a: 0, audio:'Eighteen' },
+      { q: 'Translate 14 to Arabic.', choices: ['أربعة عشر','عشرة وأربعة','أربعة','أربعون'], a: 0, audio:'Fourteen' },
+      { q: 'What number is "ستة وثلاثون"?', choices: ['36','63','26','34'], a: 0, audio:'Thirty-six' },
+      { q: 'Translate 21 to Arabic.', choices: ['واحد وعشرون','عشرون وواحد','اثنان وعشرون','واحد وعشرة'], a: 0, audio:'Twenty-one' },
+      { q: 'Translate 29 to Arabic.', choices: ['تسعة وعشرون','تسعون','اثنان وتسعون','عشرون وتسعة'], a: 0, audio:'Twenty-nine' },
+      { q: 'What number is "خمسة واربعون"?', choices: ['45','54','40','55'], a: 0, audio:'Forty-five' }
+    ]
+  },
+
+  /* وحدة 4: الألوان (60 سؤال) */
+  {
+    id: 'colors',
+    title: 'الألوان',
+    desc: 'أحمر، أزرق، أخضر، أصفر، بنفسجي، برتقالي، أسود، أبيض، رمادي، وردي',
+    questions: [
+      { q: 'What is "أحمر" in English?', choices: ['Red','Blue','Green','Black'], a: 0, audio:'Red' },
+      { q: 'What is "أزرق" in English?', choices: ['Yellow','Blue','Pink','Brown'], a: 1, audio:'Blue' },
+      { q: 'What is "أخضر" in English?', choices: ['Green','White','Gray','Purple'], a: 0, audio:'Green' },
+      { q: 'Choose the color "أسود"', choices: ['White','Black','Orange','Green'], a: 1, audio:'Black' },
+      { q: 'What is "أبيض" in English?', choices: ['Black','White','Blue','Pink'], a: 1, audio:'White' },
+      { q: 'What is "أصفر" in English?', choices: ['Purple','Orange','Yellow','Gray'], a: 2, audio:'Yellow' },
+      { q: 'What is "بني" in English?', choices: ['Brown','Red','Green','Blue'], a: 0, audio:'Brown' },
+      { q: 'What is "رمادي" in English?', choices: ['Gray','Pink','Yellow','White'], a: 0, audio:'Gray' },
+      { q: 'What is "وردي" in English?', choices: ['Purple','Pink','Green','Blue'], a: 1, audio:'Pink' },
+      { q: 'What is "برتقالي" in English?', choices: ['Orange','Red','Brown','Yellow'], a: 0, audio:'Orange' },
+
+      { q: 'Translate "Purple" to Arabic.', choices: ['بنفسجي','أحمر','رمادي','وردي'], a: 0, audio:'Purple' },
+      { q: 'Which is "navy blue" in Arabic?', choices: ['أزرق غامق','أزرق فاتح','أخضر','رمادي'], a: 0, audio:'Navy blue' },
+      { q: 'Translate "light green" to Arabic.', choices: ['أخضر فاتح','أخضر غامق','أحمر','أبيض'], a: 0, audio:'Light green' },
+      { q: 'Translate "dark red" to Arabic.', choices: ['أحمر غامق','أحمر فاتح','وردي','برتقالي'], a: 0, audio:'Dark red' },
+      { q: 'Choose: "Black and white" = ?', choices: ['أسود وأبيض','أحمر وأزرق','أخضر وأصفر','وردي وبنفسجي'], a: 0, audio:'Black and white' },
+      { q: 'Which color is "sky blue"?', choices: ['Color of sky','Green','Red','Brown'], a: 0, audio:'Sky blue' },
+      { q: 'Translate "gold" to Arabic.', choices: ['ذهبي','فضي','برونزي','أسود'], a: 0, audio:'Gold' },
+      { q: 'Translate "silver" to Arabic.', choices: ['فضي','ذهبي','أخضر','أحمر'], a: 0, audio:'Silver' },
+      { q: 'What is "turquoise" in Arabic?', choices: ['تركوازي','بنفسجي','وردي','أصفر'], a: 0, audio:'Turquoise' },
+      { q: 'What is "beige" in Arabic?', choices: ['بيج','أسود','رمادي','أبيض'], a: 0, audio:'Beige' },
+
+      { q: 'Translate "maroon" to Arabic.', choices: ['مارون/بني محمر','أحمر','أزرق','أخضر'], a: 0, audio:'Maroon' },
+      { q: 'Which is "lime green" in Arabic?', choices: ['أخضر ليموني','أخضر غامق','أخضر فاتح','أزرق'], a: 0, audio:'Lime green' },
+      { q: 'Translate "navy" to Arabic.', choices: ['كحلي','أزرق','أسود','رمادي'], a: 0, audio:'Navy' },
+      { q: 'Translate "olive" to Arabic.', choices: ['زيتي','أخضر','بني','رمادي'], a: 0, audio:'Olive' },
+      { q: 'Which is "peach" in Arabic?', choices: ['خوخي','وردي','برتقالي','بني'], a: 0, audio:'Peach' },
+      { q: 'Which is "coral" in Arabic?', choices: ['مرجاني','وردي','أحمر','برتقالي'], a: 0, audio:'Coral' },
+      { q: 'Translate "mint" to Arabic.', choices: ['نعناعي','أخضر','أزرق','وردي'], a: 0, audio:'Mint' },
+      { q: 'Translate "chocolate color" to Arabic.', choices: ['بني شوكولاتة','بني فاتح','عسلي','برتقالي'], a: 0, audio:'Chocolate' },
+      { q: 'What is "pearl" color in Arabic?', choices: ['لؤلؤي','أبيض','رمادي','زهري'], a: 0, audio:'Pearl' },
+      { q: 'Which is "transparent" in Arabic?', choices: ['شفاف','أبيض','أسود','رمادي'], a: 0, audio:'Transparent' },
+
+      { q: 'Choose the translation: "blue" = ?', choices: ['أزرق','أحمر','أخضر','أصفر'], a: 0, audio:'Blue' },
+      { q: 'Choose the translation: "green" = ?', choices: ['أخضر','أسود','وردي','بني'], a: 0, audio:'Green' },
+      { q: 'Which color is used for traffic stop (in many places)?', choices: ['Red','Blue','Green','Orange'], a: 0, audio:'Red' },
+      { q: 'Which color is "lemon yellow"?', choices: ['أصفر ليموني','أحمر','أخضر','أزرق'], a: 0, audio:'Lemon yellow' },
+      { q: 'Translate "transparent" to Arabic.', choices: ['شفاف','باهت','مرئي','لامع'], a: 0, audio:'Transparent' },
+      { q: 'Translate "matte" to Arabic.', choices: ['مطفأ/غير لامع','لامع','براق','شفاف'], a: 0, audio:'Matte' },
+      { q: 'Which is "glossy" in Arabic?', choices: ['لامع','مطفأ','شفاف','رمادي'], a: 0, audio:'Glossy' },
+      { q: 'What is "ivory" in Arabic?', choices: ['عاجي','أبيض','بيج','رمادي'], a: 0, audio:'Ivory' },
+      { q: 'Which is "tan" in Arabic?', choices: ['ترابي','بيج','بني','أحمر'], a: 0, audio:'Tan' },
+      { q: 'Translate "fuchsia" to Arabic.', choices: ['فوشيا','وردي','بنفسجي','أحمر'], a: 0, audio:'Fuchsia' }
+    ]
+  },
+
+  /* وحدة 5: أيام الأسبوع والوقت (60 سؤال) */
+  {
+    id: 'days',
+    title: 'أيام الأسبوع والوقت',
+    desc: 'السبت، الأحد، ... والمفردات الزمنية البسيطة',
+    questions: [
+      { q: 'What is "السبت" in English?', choices: ['Saturday','Sunday','Monday','Friday'], a: 0, audio:'Saturday' },
+      { q: 'What is "الأحد" in English?', choices: ['Tuesday','Sunday','Saturday','Thursday'], a: 1, audio:'Sunday' },
+      { q: 'What is "الاثنين" in English?', choices: ['Monday','Tuesday','Wednesday','Thursday'], a: 0, audio:'Monday' },
+      { q: 'What is "الثلاثاء" in English?', choices: ['Tuesday','Monday','Thursday','Wednesday'], a: 0, audio:'Tuesday' },
+      { q: 'What is "الأربعاء" in English?', choices: ['Wednesday','Thursday','Friday','Saturday'], a: 0, audio:'Wednesday' },
+      { q: 'What is "الخميس" in English?', choices: ['Thursday','Friday','Saturday','Sunday'], a: 0, audio:'Thursday' },
+      { q: 'What is "الجمعة" in English?', choices: ['Friday','Wednesday','Monday','Tuesday'], a: 0, audio:'Friday' },
+      { q: 'Translate "weekday" to Arabic.', choices: ['يوم عمل','إجازة','عطلة','عيد'], a: 0, audio:'Weekday' },
+      { q: 'Translate "weekend" to Arabic.', choices: ['عطلة نهاية الأسبوع','يوم عمل','إجتماع','درس'], a: 0, audio:'Weekend' },
+      { q: 'Which day comes after Monday?', choices: ['Tuesday','Sunday','Wednesday','Thursday'], a: 0, audio:'Tuesday' },
+
+      { q: 'Which day comes before Friday?', choices: ['Thursday','Saturday','Wednesday','Sunday'], a: 0, audio:'Thursday' },
+      { q: 'Translate "today" to Arabic.', choices: ['اليوم','غداً','أمس','الأسبوع'], a: 0, audio:'Today' },
+      { q: 'Translate "tomorrow" to Arabic.', choices: ['غداً','اليوم','أمس','بعد غد'], a: 0, audio:'Tomorrow' },
+      { q: 'Translate "yesterday" to Arabic.', choices: ['أمس','اليوم','غداً','الأسبوع الماضي'], a: 0, audio:'Yesterday' },
+      { q: 'What is "morning" in Arabic?', choices: ['صباح','مساء','ظهر','ليل'], a: 0, audio:'Morning' },
+      { q: 'What is "afternoon" in Arabic?', choices: ['مساء/بعد الظهر','صباح','ليل','فجر'], a: 0, audio:'Afternoon' },
+      { q: 'What is "evening" in Arabic?', choices: ['مساء','صباح','ظهر','ليل'], a: 0, audio:'Evening' },
+      { q: 'What is "night" in Arabic?', choices: ['ليل','صباح','مساء','ظهر'], a: 0, audio:'Night' },
+      { q: 'Translate "hour" to Arabic.', choices: ['ساعة','دقيقة','ثانية','يوم'], a: 0, audio:'Hour' },
+      { q: 'Translate "minute" to Arabic.', choices: ['دقيقة','ساعة','ثانية','شهر'], a: 0, audio:'Minute' },
+
+      { q: 'How do you say "7:00" (seven o\'clock) in Arabic?', choices: ['الساعة السابعة','الساعة الخامسة','الساعة التاسعة','الساعة العاشرة'], a: 0, audio:'Seven o\'clock' },
+      { q: 'How do you say "12:00" (noon) in Arabic?', choices: ['الساعة الثانية عشر ظهراً','الساعة الثانية عشر ليلاً','الساعة الواحدة','الساعة العاشرة'], a: 0, audio:'Noon' },
+      { q: 'How do you say "midnight" in Arabic?', choices: ['منتصف الليل','منتصف النهار','الظهر','الساعة الأولى'], a: 0, audio:'Midnight' },
+      { q: 'Translate "week" to Arabic.', choices: ['أسبوع','شهر','يوم','عام'], a: 0, audio:'Week' },
+      { q: 'Translate "month" to Arabic.', choices: ['شهر','أسبوع','سنة','يوم'], a: 0, audio:'Month' },
+      { q: 'Translate "year" to Arabic.', choices: ['سنة','أسبوع','شهر','يوم'], a: 0, audio:'Year' },
+      { q: 'Which is "morning" in English?', choices: ['Morning','Afternoon','Evening','Night'], a: 0, audio:'Morning' },
+      { q: 'Which is "after tomorrow" in Arabic?', choices: ['بعد غد','أمس','اليوم','غد'], a: 0, audio:'After tomorrow' },
+      { q: 'Which is "before yesterday" in Arabic?', choices: ['قبل أمس','غد','بعد غد','اليوم'], a: 0, audio:'Before yesterday' },
+      { q: 'Translate "calendar" to Arabic.', choices: ['تقويم','ساعة','مفكرة','جمعة'], a: 0, audio:'Calendar' },
+
+      { q: 'What is "spring" in Arabic (season)?', choices: ['الربيع','الصيف','الخريف','الشتاء'], a: 0, audio:'Spring' },
+      { q: 'What is "summer" in Arabic (season)?', choices: ['الصيف','الشتاء','الخريف','الربيع'], a: 0, audio:'Summer' },
+      { q: 'What is "autumn/fall" in Arabic?', choices: ['الخريف','الربيع','الصيف','الشتاء'], a: 0, audio:'Autumn' },
+      { q: 'What is "winter" in Arabic?', choices: ['الشتاء','الصيف','الخريف','الربيع'], a: 0, audio:'Winter' },
+      { q: 'Translate "season" to Arabic.', choices: ['فصل','سنة','شهر','عطلة'], a: 0, audio:'Season' },
+      { q: 'Which is "holiday" in Arabic?', choices: ['عطلة','يوم','ساعة','شهر'], a: 0, audio:'Holiday' },
+      { q: 'Which is "schedule" in Arabic?', choices: ['جدول','مفكرة','تقويم','ساعة'], a: 0, audio:'Schedule' },
+      { q: 'Translate "appointment" to Arabic.', choices: ['موعد','مهمة','درس','مشروع'], a: 0, audio:'Appointment' },
+      { q: 'Which is "deadline" in Arabic?', choices: ['موعد نهائي','موعد','حق','قيمة'], a: 0, audio:'Deadline' },
+      { q: 'Translate "early" to Arabic.', choices: ['مبكّر','متأخّر','لاحقاً','أبداً'], a: 0, audio:'Early' },
+
+      { q: 'Translate "late" to Arabic.', choices: ['متأخّر','مبكّر','قريب','بعد'], a: 0, audio:'Late' },
+      { q: 'How do you say "quarter past two" in Arabic?', choices: ['الساعة الثانية والربع','الساعة الثانية ونصف','الساعة الثالثة','الساعة الثانية تماماً'], a: 0, audio:'Quarter past two' },
+      { q: 'How do you say "half past three" in Arabic?', choices: ['الساعة الثالثة والنصف','الساعة الثالثة والربع','الساعة الرابعة','الساعة الثالثة تماماً'], a: 0, audio:'Half past three' },
+      { q: 'Which is "o\'clock" in Arabic?', choices: ['تماماً','ونصف','وربع','قبل'], a: 0, audio:'O\'clock' },
+      { q: 'Translate "daily" to Arabic.', choices: ['يومي','أسبوعي','شهري','سنوي'], a: 0, audio:'Daily' },
+      { q: 'Translate "weekly" to Arabic.', choices: ['أسبوعي','يومي','شهري','سنوي'], a: 0, audio:'Weekly' },
+      { q: 'Translate "monthly" to Arabic.', choices: ['شهري','سنوي','يومي','أسبوعي'], a: 0, audio:'Monthly' },
+      { q: 'Translate "annual" to Arabic.', choices: ['سنوي','شهري','يومي','أسبوعي'], a: 0, audio:'Annual' },
+      { q: 'Which is "midday" in Arabic?', choices: ['منتصف النهار','منتصف الليل','الصباح','المساء'], a: 0, audio:'Midday' },
+      { q: 'Which is "dawn" in Arabic?', choices: ['فجر','ظهر','مساء','ليل'], a: 0, audio:'Dawn' }
+    ]
+  }
+]; // نهاية UNITS
+
+/* --- منطق اللعبة (كما في النسخة الأصلية) --- */
+let state = { unit: null, questions: [], index:0, score:0, level:1 };
+
+const unitList = document.getElementById('unitList');
+const startBtn = document.getElementById('startBtn');
+const promptEl = document.getElementById('prompt');
+const choicesEl = document.getElementById('choices');
+const qIndexEl = document.getElementById('qIndex');
+const qTotalEl = document.getElementById('qTotal');
+const progressBar = document.getElementById('progressBar');
+const scoreEl = document.getElementById('score');
+const levelEl = document.getElementById('level');
+const toast = document.getElementById('toast');
+const listenBtn = document.getElementById('listenBtn');
+const skipBtn = document.getElementById('skipBtn');
+const feedback = document.getElementById('feedback');
+const progressText = document.getElementById('progressText');
+
+function showToast(text, ms=1200){
+  toast.textContent = text;
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'), ms);
+}
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function renderUnits(){
+  unitList.innerHTML = '';
+  UNITS.forEach((u, idx)=>{
+    const el = document.createElement('div');
+    el.className = 'unit';
+    el.textContent = u.title;
+    el.title = u.desc;
+    el.onclick = ()=>selectUnit(idx, el);
+    unitList.appendChild(el);
+  });
+}
+
+function selectUnit(idx, el){
+  Array.from(unitList.children).forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  state.unit = UNITS[idx];
+  promptEl.textContent = `وحدة: ${state.unit.title} — اضغط ابدأ لبدء التمرين`;
+  choicesEl.innerHTML = '';
+  qIndexEl.textContent = 0;
+  qTotalEl.textContent = state.unit.questions.length;
+  progressBar.style.width = '0%';
+  progressText.textContent = `0 / ${state.unit.questions.length}`;
+}
+
+function startLesson(){
+  if(!state.unit) return showToast('اختر وحدة أولاً');
+  state.questions = shuffle(state.unit.questions.slice());
+  state.index = 0;
+  renderQuestion();
+  updateUI();
+  startBtn.textContent = 'إعادة الدرس';
+}
+
+function renderQuestion(){
+  const q = state.questions[state.index];
+  if(!q){
+    promptEl.textContent = 'انتهت الوحدة — أحسنت!';
+    choicesEl.innerHTML = '';
+    qIndexEl.textContent = 0;
+    qTotalEl.textContent = state.questions.length;
+    progressBar.style.width='100%';
+    progressText.textContent = `${state.questions.length} / ${state.questions.length}`;
+    return;
+  }
+
+  promptEl.textContent = q.q;
+  qIndexEl.textContent = state.index+1;
+  qTotalEl.textContent = state.questions.length;
+  progressText.textContent = `${state.index+1} / ${state.questions.length}`;
+
+  const map = q.choices.map((c,i)=>({c,i}));
+  shuffle(map);
+  choicesEl.innerHTML = '';
+  map.forEach(m=>{
+    const btn = document.createElement('button');
+    btn.className='choice';
+    btn.innerHTML = `<div>${m.c}</div>`;
+    btn.onclick = ()=>selectChoice(m.i, btn);
+    choicesEl.appendChild(btn);
+  });
+  progressBar.style.width = Math.round((state.index / state.questions.length)*100) + '%';
+  feedback.textContent = '';
+}
+
+function selectChoice(originalIndex, btnEl){
+  const q = state.questions[state.index];
+  if(!q) return;
+  const btns = Array.from(document.querySelectorAll('.choice'));
+  if(btnEl.classList.contains('disabled')) return;
+
+  if(originalIndex === q.a){
+    btnEl.classList.add('correct');
+    state.score += 5;
+    state.level = Math.min(12, state.level + 0.05);
+    feedback.textContent = 'إجابة صحيحة +5 نقاط';
+    showToast('+5');
+  } else {
+    btnEl.classList.add('wrong');
+    const correctText = q.choices[q.a];
+    const correctBtn = btns.find(b=>b.textContent.trim() === correctText);
+    if(correctBtn) correctBtn.classList.add('correct');
+    state.score = Math.max(0, state.score - 2);
+    feedback.textContent = 'خاطئ — -2 نقاط';
+    showToast('-2');
+  }
+
+  btns.forEach(b=>b.classList.add('disabled'));
+  updateUI();
+
+  setTimeout(()=>{
+    state.index++;
+    if(state.index % 4 === 0) state.level = Math.floor(state.level) + 1;
+    renderQuestion();
+    updateUI();
+  }, 800);
+}
+
+function updateUI(){
+  scoreEl.textContent = Math.round(state.score);
+  levelEl.textContent = Math.floor(state.level);
+  if(state.questions.length){
+    progressBar.style.width = Math.round((state.index / state.questions.length)*100) + '%';
+  }
+}
+
+function speak(text){
+  if('speechSynthesis' in window){
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = /[\u0600-\u06FF]/.test(text) ? 'ar-SA' : 'en-US';
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }
+}
+
+listenBtn.addEventListener('click', ()=>{
+  const q = state.questions[state.index];
+  if(!q) return showToast('لا يوجد سؤال حالياً');
+  speak(q.audio || q.q);
+});
+skipBtn.addEventListener('click', ()=>{
+  state.index++;
+  renderQuestion();
+  updateUI();
+});
+startBtn.addEventListener('click', startLesson);
+
+window.addEventListener('keydown', e=>{
+  if(e.key === 'r' || e.key === 'R') startLesson();
+  const k = parseInt(e.key);
+  if(k>=1 && k<=4){
+    const btn = choicesEl.children[k-1];
+    if(btn) btn.click();
+  }
+});
+
+function saveProgress(){
+  try{
+    localStorage.setItem('vocab5_sem1', JSON.stringify({score:state.score,level:state.level}));
+  }catch(e){}
+}
+function loadProgress(){
+  try{
+    const s = JSON.parse(localStorage.getItem('vocab5_sem1')||'null');
+    if(s){
+      state.score = s.score||0;
+      state.level = s.level||1;
+      updateUI();
+    }
+  }catch(e){}
+}
+setInterval(saveProgress,2000);
+window.addEventListener('beforeunload', saveProgress);
+
+renderUnits();
+loadProgress();
+
+  </script>
+</body>
+</html>
